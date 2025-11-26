@@ -53,32 +53,7 @@
     </section>
   </main>
 
-  <!-- Force dark mode inside each same-origin iframe -->
-  <script>
-    document.querySelectorAll("iframe").forEach((iframe) => {
-      iframe.addEventListener("load", () => {
-        try {
-          const doc = iframe.contentWindow.document;
-
-          // 1) Flip the page's dark mode toggle if present
-          const darkToggle = doc.querySelector("#darkModeToggle");
-          if (darkToggle && !darkToggle.checked) {
-            darkToggle.checked = true;
-            darkToggle.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-
-          // 2) Add a dark-mode class as a second layer (in case pages use it)
-          doc.documentElement.classList.add("dark-mode");
-
-          // 3) Hide the toggle UI in embed mode
-          const toggleContainer = doc.querySelector(".toggle-container");
-          if (toggleContainer) toggleContainer.style.display = "none";
-        } catch (e) {
-          console.warn("Could not force dark mode in iframe:", e);
-        }
-      });
-    });
-  </script>
+  <!-- Force dark mode inside each same-origin iframe --
 </body>
 </html>
 
