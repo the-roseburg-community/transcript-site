@@ -12,6 +12,40 @@
     <meta name="author" content="Joseph Ziegler - The Roseburg Receiver">
     <title>Transcripts For Douglas County Law 2 Primary Dispatch</title>
     <link rel="stylesheet" href="/static/transcripts.css">
+    <script>
+  // Enable minimal UI if ?embed=min
+  (function () {
+    try {
+      const params = new URLSearchParams(location.search);
+      if (params.get('embed') === 'min') {
+        document.documentElement.setAttribute('data-embed', 'min');
+      }
+    } catch (e) {}
+  }());
+</script>
+
+<style>
+  /* Minimal/embedded mode trims the chrome and tightens layout */
+  :root[data-embed="min"] body { margin: 0; }
+  :root[data-embed="min"] .toggle-container,
+  :root[data-embed="min"] .header,
+  :root[data-embed="min"] .subtitle,
+  :root[data-embed="min"] .note { display: none !important; }
+
+  :root[data-embed="min"] .transcript-container { padding: 8px 8px 12px; }
+
+  /* Keep the player visible when scrolling inside the iframe */
+  :root[data-embed="min"] #audioPlayer {
+    position: sticky; top: 0; z-index: 10; background: #000; width: 100%;
+  }
+
+  /* Slightly denser typography for more content per tile */
+  :root[data-embed="min"] { font-size: 14px; }
+  @media (max-width: 600px) {
+    :root[data-embed="min"] { font-size: 13px; }
+  }
+</style>
+
 </head>
 <body>
   <div class="toggle-container">

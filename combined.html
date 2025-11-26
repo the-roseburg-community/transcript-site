@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Douglas County – Multi-Feed Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --gap: 8px; background:#0b0b0b; color:#eaeaea; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+    header { flex: 0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:#111; border-bottom:1px solid #222; }
+    header h1 { font-size:16px; margin:0; font-weight:600; }
+    .grid {
+      flex: 1 1 auto;
+      display:grid; gap: var(--gap);
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      padding: var(--gap);
+      height: 100%;
+    }
+    .tile { background:#111; border:1px solid #222; border-radius:8px; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+    .tile .bar { flex:0 0 auto; padding:4px 8px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center; font-size:12px; background:#121212; }
+    .tile iframe { flex:1 1 auto; border:0; width:100%; height:100%; background:#000; }
+    .note { opacity:.7; font-size:11px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Douglas County Live Transcripts – Dashboard</h1>
+    <div class="note">All feeds visible; scroll inside a panel.</div>
+  </header>
+
+  <main class="grid">
+    <section class="tile">
+      <div class="bar"><strong>Law 1 – Primary</strong><span class="note">Newest calls at top</span></div>
+      <iframe src="https://transcript.roseburgscanner.com/law1?embed=min" title="Law 1"></iframe>
+    </section>
+
+    <section class="tile">
+      <div class="bar"><strong>Law 2</strong><span class="note">Backup/Secondary</span></div>
+      <iframe src="https://transcript.roseburgscanner.com/law2?embed=min" title="Law 2"></iframe>
+    </section>
+
+    <section class="tile">
+      <div class="bar"><strong>Fire / EMS</strong><span class="note">Primary</span></div>
+      <iframe src="https://transcript.roseburgscanner.com/fire_dispatch?embed=min" title="Fire/EMS"></iframe>
+    </section>
+
+    <section class="tile">
+      <div class="bar"><strong>DFPA Primary</strong><span class="note">Aux</span></div>
+      <iframe src="https://transcript.roseburgscanner.com/dfpa_primary?embed=min" title="DFPA"></iframe>
+    </section>
+  </main>
+
+  <!-- Force dark mode inside each same-origin iframe -->
+  <script>
+    document.querySelectorAll("iframe").forEach((iframe) => {
+      iframe.addEventListener("load", () => {
+        try {
+          const doc = iframe.contentWindow.document;
+
+          // 1) Flip the page's dark mode toggle if present
+          const darkToggle = doc.querySelector("#darkModeToggle");
+          if (darkToggle && !darkToggle.checked) {
+            darkToggle.checked = true;
+            darkToggle.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+
+          // 2) Add a dark-mode class as a second layer (in case pages use it)
+          doc.documentElement.classList.add("dark-mode");
+
+          // 3) Hide the toggle UI in embed mode
+          const toggleContainer = doc.querySelector(".toggle-container");
+          if (toggleContainer) toggleContainer.style.display = "none";
+        } catch (e) {
+          console.warn("Could not force dark mode in iframe:", e);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
+

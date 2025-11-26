@@ -1,384 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-    <link rel="icon" type="image/x-icon" href="/media/trrico.ico">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Latest Transcripts For Douglas County Fire Dispatch">
-    <meta property="og:title" content="Latest Transcripts For Douglas County Fire Dispatch">
-    <meta property="og:description" content="Latest Transcripts For Douglas County Fire Dispatch. Live voice-to-text transcription">
-    <meta property="og:image" content="https://www.theroseburgreceiver.com/wp-content/uploads/2023/07/BannerLights.png">
-    <meta property="og:url" content="https://transcript.theroseburgreceiver.com">
-    <meta name="author" content="Joseph Ziegler - The Roseburg Receiver">
-    <title>Transcripts For Douglas County Fire Dispatch</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f0f0f0;
-            color: #000;
-        }
-        .transcript-container {
-            padding: 20px;
-            border-radius: 10px;
-            background-color: #ffffff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 90%;
-        }
-        .transcript {
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #fff;
-            position: relative;
-        }
-        .subtitle {
-            text-align: center;
-            font-style: italic;
-            font-size: 14px;
-            color: #777;
-        }
-        #audioPlayer {
-            width: 60%;
-            display: block;
-            margin: 0 auto 10px auto;
-        }
-        .note {
-            text-align: center;
-            font-style: italic;
-            font-size: 12px;
-            color: #777;
-        }
-        .highlight-red {
-            background-color: red !important;
-            color: white !important;
-        }
-        .highlight-yellow {
-            background-color: yellow !important;
-            color: black !important;
-        }
-        .keyword-red {
-            background-color: white;
-            color: red;
-            font-weight: bold;
-        }
-        .keyword-yellow {
-            background-color: black;
-            color: yellow;
-            font-weight: bold;
-        }
-        .highlight-orange {
-            background-color: orange !important;
-            color: black !important;
-        }
-        .keyword-orange {
-            background-color: black;
-            color: orange;
-            font-weight: bold;
-        }
+  <link rel="icon" type="image/x-icon" href="/media/trrico.ico">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        .copy-icon {
-            cursor: pointer;
-            margin-left: 10px;
-            font-size: 16px;
-            position: relative;
-        }
-        .tooltip {
-            visibility: hidden;
-            width: 80px;
-            background-color: #555;
-            color: #fff;
-            text-align: center;
-            border-radius: 5px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -40px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .tooltip::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #555 transparent transparent transparent;
-        }
-        .dark-mode {
-            background-color: #121212;
-            color: #e0e0e0;
-        }
-        .dark-mode .transcript-container {
-            background-color: #1e1e1e;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-        }
-        .dark-mode .transcript {
-            background-color: #2c2c2c;
-            border-color: #444;
-        }
-        .dark-mode a {
-            color: #b3d4fc;
-        }
-        .toggle-container {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-        }
-    </style>
+  <meta name="description" content="Latest Transcripts For Douglas County Fire Dispatch">
+  <meta property="og:title" content="Latest Transcripts For Douglas County Fire Dispatch">
+  <meta property="og:description" content="Latest Transcripts For Douglas County Fire Dispatch. Live voice-to-text transcription">
+  <meta property="og:image" content="https://www.theroseburgreceiver.com/wp-content/uploads/2023/07/BannerLights.png">
+  <meta property="og:url" content="https://transcript.theroseburgreceiver.com">
+  <meta name="author" content="Joseph Ziegler - The Roseburg Receiver">
+
+  <title>Transcripts For Douglas County Fire Dispatch</title>
+
+  <!-- Early theme: default LIGHT unless user chose; no system override -->
+  <script>
+  (function () {
+    try {
+      const KEY = 'theme';
+      const saved = localStorage.getItem(KEY);
+      const theme = saved || 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.colorScheme = theme;
+
+      // Minimal UI if ?embed=min
+      const params = new URLSearchParams(location.search);
+      if (params.get('embed') === 'min') {
+        document.documentElement.setAttribute('data-embed', 'min');
+      }
+    } catch (e) {}
+  }());
+  </script>
+
+  <link rel="stylesheet" href="/static/transcripts.css">
+
+  <style>
+    /* Minimal/embedded mode trims the chrome and tightens layout */
+    :root[data-embed="min"] body { margin: 0; }
+    :root[data-embed="min"] .toggle-container,
+    :root[data-embed="min"] .header,
+    :root[data-embed="min"] .subtitle,
+    :root[data-embed="min"] .note { display: none !important; }
+
+    :root[data-embed="min"] .transcript-container { padding: 8px 8px 12px; }
+
+    /* Keep the player visible when scrolling inside the iframe */
+    :root[data-embed="min"] #audioPlayer {
+      position: sticky; top: 0; z-index: 10; background: #000; width: 100%;
+    }
+
+    /* Slightly denser typography for more content per tile */
+    :root[data-embed="min"] { font-size: 14px; }
+    @media (max-width: 600px) {
+      :root[data-embed="min"] { font-size: 13px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="toggle-container">
-        <label for="darkModeToggle">Dark Mode:</label>
-        <input type="checkbox" id="darkModeToggle">
-    </div>
-    <div class="transcript-container">
-        <h1 style="text-align: center;">Latest Transcripts For Douglas County Fire Dispatch</h1>
-        <h2 class="subtitle">This page automatically refreshes as new feeds are received. Newest calls are at the top. The last 50 transmissions are shown.</h2>
-        <h2 class="subtitle">Note: The messages below are generated by AI and are not 100% accurate.</h2>
+  <div class="toggle-container">
+    <label for="darkModeToggle">Dark Mode:</label>
+    <input type="checkbox" id="darkModeToggle">
+  </div>
 
-        <audio id="audioPlayer" controls>
-            <source id="audioSource" src="" type="audio/mp3">
-            Your browser does not support the audio element.
-        </audio>
-        <p class="note">The player does not play automatically. It only plays selected audio.</p>
+  <div class="header">
+    <img
+      src="https://s3.us-west-1.wasabisys.com/cdn.zigsphere.com/roseburgscanner.com/photos/banner_styled.png"
+      alt="Roseburg Receiver"
+      class="logo"
+    >
+    <h1>Douglas County Fire Dispatch Transcripts</h1>
+    <div class="subtitle">Live voice-to-text feed – Newest calls at top</div>
+    <div class="subtitle">The last 50 transmissions are shown. AI-generated, not 100% accurate.</div>
+  </div>
 
-        <div id="transcripts" class="transcript-container"></div>
-    </div>
+  <div class="transcript-container">
+    <audio id="audioPlayer" controls>
+      <source id="audioSource" src="" type="audio/mp3">
+      Your browser does not support the audio element.
+    </audio>
+    <p class="note">The player does not play automatically. It only plays selected audio.</p>
+    <div id="transcripts"></div>
+  </div>
 
-    <script>
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        const body = document.body;
-
-        darkModeToggle.addEventListener('change', () => {
-            if (darkModeToggle.checked) {
-                body.classList.add('dark-mode');
-                localStorage.setItem('darkMode', 'enabled');
-            } else {
-                body.classList.remove('dark-mode');
-                localStorage.setItem('darkMode', 'disabled');
-            }
-        });
-
-        if (localStorage.getItem('darkMode') === 'enabled') {
-            darkModeToggle.checked = true;
-            body.classList.add('dark-mode');
-        }
-
-        const keywordsRed = [
-            "commercial fire",
-            "cover fire",
-	    "flue fire",
-            "structure fire",
-            "urgent",
-            "smoke",
-            "accident",
-            "grass fire",
-            "burn",
-            "vehicle fire",
-            "mva",
-            "nva ",
-	    "mba ",
-            "explosion",
-            "gunshot"
-        ];
-
-        const keywordsYellow = [
-            "medical aid",
-            "mutual aid",
-            "flood",
-            "power outage",
-            "road closure",
-            "water rescue"
-        ];
-
-        const keywordsOrange = [
-            "fire alarm",
-            "fire investigation"
-        ];
-
-        async function getCurrentDateUrl() {
-            const now = new Date();
-            const year = now.getUTCFullYear();
-            const month = now.getUTCMonth() + 1;
-            const day = now.getUTCDate();
-            return `https://archive.theroseburgreceiver.com/fire/${year}/${month}/${day}/`;
-        }
-
-        async function fetchTranscripts() {
-            const baseUrl = await getCurrentDateUrl();
-            const transcriptsContainer = document.getElementById('transcripts');
-            let response;
-            try {
-                response = await fetch(baseUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-            } catch (error) {
-                console.error('Error fetching the JSON file list:', error);
-                return;
-            }
-
-            const text = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/html');
-            const links = Array.from(doc.querySelectorAll('a'))
-                .map(a => a.getAttribute('href'))
-                .filter(href => href && href.endsWith('.json'))
-                .map(href => baseUrl + href)
-                .slice(-50);
-
-            const transcripts = [];
-
-            for (const link of links) {
-                try {
-                    const response = await fetch(link);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const json = await response.json();
-                    let transcript = json.transcript?.transcript || 'No transcript available';
-
-                    const regex = /Thanks\s*for\s*watching|Thank\s*you\s*for\s*watching/gi;
-                    if (regex.test(transcript)) {
-                        transcript = "-- FIRE TONE OR NO AUDIO --";
-                    }
-                    const filename = link.split('/').pop();
-                    const dateStr = filename.split('_')[1];
-                    const year = dateStr.slice(0, 4);
-                    const month = dateStr.slice(4, 6);
-                    const day = dateStr.slice(6, 8);
-                    const timeStr = filename.split('_')[2].slice(0, 6);
-                    const hours = timeStr.slice(0, 2);
-                    const minutes = timeStr.slice(2, 4);
-                    const seconds = timeStr.slice(4, 6);
-
-                    const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
-                    const losAngelesTime = new Intl.DateTimeFormat('en-US', {
-                        timeZone: 'America/Los_Angeles',
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false
-                    }).format(utcDate);
-
-                    const mp3Link = `${baseUrl}${filename.replace('.json', '.mp3')}`;
-
-                    const matchingRedKeyword = keywordsRed.find(keyword => transcript.toLowerCase().includes(keyword.toLowerCase()));
-                    const matchingYellowKeyword = keywordsYellow.find(keyword => transcript.toLowerCase().includes(keyword.toLowerCase()));
-                    const matchingOrangeKeyword = keywordsOrange.find(keyword => transcript.toLowerCase().includes(keyword.toLowerCase()));
-
-                    if (matchingRedKeyword) {
-                        transcript = transcript.replace(
-                            new RegExp(`(${matchingRedKeyword})`, 'gi'),
-                            '<span class="keyword-red">$1</span>'
-                        );
-                    }
-
-                    if (matchingYellowKeyword) {
-                        transcript = transcript.replace(
-                            new RegExp(`(${matchingYellowKeyword})`, 'gi'),
-                            '<span class="keyword-yellow">$1</span>'
-                        );
-                    }
-
-                    if (matchingOrangeKeyword) {
-                        transcript = transcript.replace(
-                            new RegExp(`(${matchingOrangeKeyword})`, 'gi'),
-                            '<span class="keyword-orange">$1</span>'
-                        );
-                    }
-
-                    transcripts.push({ time: losAngelesTime, transcript, mp3Link, matchingRedKeyword, matchingYellowKeyword, matchingOrangeKeyword });
-                } catch (error) {
-                    console.error(`Error fetching JSON from ${link}:`, error);
-                }
-            }
-
-            displayTranscripts(transcripts.reverse());
-        }
-
-        function displayTranscripts(transcripts) {
-            const transcriptsContainer = document.getElementById('transcripts');
-            const audioPlayer = document.getElementById('audioPlayer');
-            const audioSource = document.getElementById('audioSource');
-
-            transcriptsContainer.innerHTML = '';
-            transcripts.forEach(({ time, transcript, mp3Link, matchingRedKeyword, matchingYellowKeyword, matchingOrangeKeyword }) => {
-                const transcriptDiv = document.createElement('div');
-                transcriptDiv.className = 'transcript';
-
-                if (matchingRedKeyword) {
-                    transcriptDiv.classList.add('highlight-red');
-                } else if (matchingYellowKeyword) {
-                    transcriptDiv.classList.add('highlight-yellow');
-                } else if (matchingOrangeKeyword) {
-                    transcriptDiv.classList.add('highlight-orange');
-                }
-
-                const timeSpan = document.createElement('span');
-                timeSpan.style.fontWeight = 'bold';
-                timeSpan.textContent = `${time}: `;
-                transcriptDiv.appendChild(timeSpan);
-
-                const transcriptSpan = document.createElement('span');
-                transcriptSpan.innerHTML = transcript;
-                transcriptDiv.appendChild(transcriptSpan);
-
-                const mp3LinkAnchor = document.createElement('a');
-                mp3LinkAnchor.href = '#';
-                mp3LinkAnchor.textContent = 'Listen';
-                mp3LinkAnchor.style.marginLeft = '10px';
-                mp3LinkAnchor.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    audioSource.src = mp3Link;
-                    audioPlayer.load();
-                    audioPlayer.play();
-                });
-                transcriptDiv.appendChild(mp3LinkAnchor);
-
-                const copyIcon = document.createElement('span');
-                copyIcon.textContent = '📋';
-                copyIcon.className = 'copy-icon';
-
-                const tooltip = document.createElement('span');
-                tooltip.className = 'tooltip';
-                tooltip.textContent = 'Copied!';
-                copyIcon.appendChild(tooltip);
-
-                copyIcon.addEventListener('click', () => {
-                    navigator.clipboard.writeText(transcript.replace(/<[^>]+>/g, ''))
-                        .then(() => {
-                            tooltip.style.visibility = 'visible';
-                            tooltip.style.opacity = '1';
-                            setTimeout(() => {
-                                tooltip.style.visibility = 'hidden';
-                                tooltip.style.opacity = '0';
-                            }, 2000);
-                        })
-                        .catch(err => console.error('Error copying text:', err));
-                });
-                transcriptDiv.appendChild(copyIcon);
-
-                transcriptsContainer.appendChild(transcriptDiv);
-            });
-        }
-
-        fetchTranscripts();
-        setInterval(fetchTranscripts, 5000);
-    </script>
+  <!-- Cache-bust to avoid stale JS -->
+  <script src="/static/transcripts_fire1.js?v=2"></script>
 </body>
 </html>
+

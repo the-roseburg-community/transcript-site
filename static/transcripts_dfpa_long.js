@@ -1,227 +1,181 @@
-const darkModeToggle = document.getElementById('darkModeToggle');
-const body = document.body;
-darkModeToggle.addEventListener('change', () => {
-    if (darkModeToggle.checked) {
-        body.classList.add('dark-mode');
-        localStorage.setItem('darkMode', 'enabled');
-    } else {
-        body.classList.remove('dark-mode');
-        localStorage.setItem('darkMode', 'disabled');
-    }
-});
-if (localStorage.getItem('darkMode') === 'enabled') {
-    darkModeToggle.checked = true;
-    body.classList.add('dark-mode');
-}
+/* ==== THEME: tiny, reliable toggle (html[data-theme]) ==== */
+(function themeSetup(){
+  const KEY = 'theme'; // 'light' | 'dark'
+  let theme = localStorage.getItem(KEY) || 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.style.colorScheme = theme;
 
-const keywordsRed = [
-    "commercial fire", "cover fire", "flue fire", "structure fire", "urgent", "smoke",
-    "accident", "grass fire", "burn", "vehicle fire", "mva", "nva ", "mba ", "explosion", "gunshot"
-];
-const keywordsYellow = [
-    "medical aid", "mutual aid", "flood", "power outage", "road closure", "water rescue"
-];
-const keywordsOrange = [
-    "fire alarm", "fire investigation"
-];
-
-async function getDateUrls() {
-    const now = new Date();
-    // Today in UTC
-    const year = now.getUTCFullYear();
-    const month = now.getUTCMonth() + 1;
-    const day = now.getUTCDate();
-    // Yesterday in UTC
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const yYear = yesterday.getUTCFullYear();
-    const yMonth = yesterday.getUTCMonth() + 1;
-    const yDay = yesterday.getUTCDate();
-    return [
-        `https://archive.theroseburgreceiver.com/dfpaprimary/${year}/${month}/${day}/`,
-        `https://archive.theroseburgreceiver.com/dfpaprimary/${yYear}/${yMonth}/${yDay}/`
-    ];
-}
-
-function getDateFromFilename(filename) {
-    // Expects format: call_YYYYMMDD_HHMMSS.json
-    try {
-        const parts = filename.replace('.json', '').split('_');
-        if (parts.length < 3) return null;
-        const y = parseInt(parts[1].slice(0,4), 10);
-        const m = parseInt(parts[1].slice(4,6), 10);
-        const d = parseInt(parts[1].slice(6,8), 10);
-        const hh = parseInt(parts[2].slice(0,2), 10);
-        const mm = parseInt(parts[2].slice(2,4), 10);
-        const ss = parseInt(parts[2].slice(4,6), 10);
-        return new Date(Date.UTC(y, m-1, d, hh, mm, ss));
-    } catch {
-        return null;
-    }
-}
-
-async function fetchTranscripts() {
-    const baseUrls = await getDateUrls();
-    let fileList = [];
-
-    for (const baseUrl of baseUrls) {
-        try {
-            const response = await fetch(baseUrl);
-            if (!response.ok) continue;
-            const text = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/html');
-            const links = Array.from(doc.querySelectorAll('a'))
-                .map(a => a.getAttribute('href'))
-                .filter(href => href && href.endsWith('.json'))
-                .map(href => {
-                    const fullUrl = baseUrl + href;
-                    return {
-                        url: fullUrl,
-                        filename: href
-                    };
-                });
-            fileList = fileList.concat(links);
-        } catch {
-            continue;
-        }
-    }
-
-    // Sort by the parsed date from filename, newest first
-    fileList = fileList.filter(f => getDateFromFilename(f.filename))
-        .sort((a, b) => {
-            const dateA = getDateFromFilename(a.filename);
-            const dateB = getDateFromFilename(b.filename);
-            return dateB - dateA; // Descending (newest first)
-        })
-        .slice(0, 200);
-
-    const transcripts = [];
-    for (const file of fileList) {
-        try {
-            const response = await fetch(file.url);
-            if (!response.ok) continue;
-            const json = await response.json();
-            let transcript = json.transcript?.transcript || 'No transcript available';
-            const regex = /Thanks\s*for\s*watching|Thank\s*you\s*for\s*watching/gi;
-            if (regex.test(transcript)) {
-                transcript = "-- FIRE TONE OR NO AUDIO --";
-            }
-            const filename = file.filename;
-            const dateStr = filename.split('_')[1];
-            const year = dateStr.slice(0, 4);
-            const month = dateStr.slice(4, 6);
-            const day = dateStr.slice(6, 8);
-            const timeStr = filename.split('_')[2].slice(0, 6);
-            const hours = timeStr.slice(0, 2);
-            const minutes = timeStr.slice(2, 4);
-            const seconds = timeStr.slice(4, 6);
-            const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
-            const losAngelesTime = new Intl.DateTimeFormat('en-US', {
-                timeZone: 'America/Los_Angeles',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            }).format(utcDate);
-
-            const baseUrl = file.url.substring(0, file.url.lastIndexOf('/') + 1);
-            const mp3Link = `${baseUrl}${filename.replace('.json', '.mp3')}`;
-            const matchingRedKeyword = keywordsRed.find(keyword => transcript.toLowerCase().includes(keyword.toLowerCase()));
-            const matchingYellowKeyword = keywordsYellow.find(keyword => transcript.toLowerCase().includes(keyword.toLowerCase()));
-            const matchingOrangeKeyword = keywordsOrange.find(keyword => transcript.toLowerCase().includes(keyword.toLowerCase()));
-
-            if (matchingRedKeyword) {
-                transcript = transcript.replace(
-                    new RegExp(`(${matchingRedKeyword})`, 'gi'),
-                    '<span class="keyword-red">$1</span>'
-                );
-            }
-            if (matchingYellowKeyword) {
-                transcript = transcript.replace(
-                    new RegExp(`(${matchingYellowKeyword})`, 'gi'),
-                    '<span class="keyword-yellow">$1</span>'
-                );
-            }
-            if (matchingOrangeKeyword) {
-                transcript = transcript.replace(
-                    new RegExp(`(${matchingOrangeKeyword})`, 'gi'),
-                    '<span class="keyword-orange">$1</span>'
-                );
-            }
-
-            transcripts.push({ time: losAngelesTime, transcript, mp3Link, matchingRedKeyword, matchingYellowKeyword, matchingOrangeKeyword });
-        } catch (error) {
-            continue;
-        }
-    }
-    displayTranscripts(transcripts);
-}
-
-function displayTranscripts(transcripts) {
-    const transcriptsContainer = document.getElementById('transcripts');
-    const audioPlayer = document.getElementById('audioPlayer');
-    const audioSource = document.getElementById('audioSource');
-    transcriptsContainer.innerHTML = '';
-    transcripts.forEach(({ time, transcript, mp3Link, matchingRedKeyword, matchingYellowKeyword, matchingOrangeKeyword }) => {
-        const transcriptDiv = document.createElement('div');
-        transcriptDiv.className = 'transcript';
-        if (matchingRedKeyword) {
-            transcriptDiv.classList.add('highlight-red');
-        } else if (matchingYellowKeyword) {
-            transcriptDiv.classList.add('highlight-yellow');
-        } else if (matchingOrangeKeyword) {
-            transcriptDiv.classList.add('highlight-orange');
-        }
-        const timeSpan = document.createElement('span');
-        timeSpan.style.fontWeight = 'bold';
-        timeSpan.textContent = `${time}: `;
-        transcriptDiv.appendChild(timeSpan);
-        const transcriptSpan = document.createElement('span');
-        transcriptSpan.innerHTML = transcript;
-        transcriptDiv.appendChild(transcriptSpan);
-
-        const mp3LinkAnchor = document.createElement('a');
-        mp3LinkAnchor.href = '#';
-        mp3LinkAnchor.textContent = '▶ Listen';
-        mp3LinkAnchor.className = 'listen-btn';
-        mp3LinkAnchor.addEventListener('click', (event) => {
-            event.preventDefault();
-            audioSource.src = mp3Link;
-            audioPlayer.load();
-            audioPlayer.play();
-        });
-        transcriptDiv.appendChild(mp3LinkAnchor);
-
-        const copyIcon = document.createElement('span');
-        copyIcon.textContent = '📋';
-        copyIcon.className = 'copy-icon';
-
-        const tooltip = document.createElement('span');
-        tooltip.className = 'tooltip';
-        tooltip.textContent = 'Copied!';
-        copyIcon.appendChild(tooltip);
-
-        copyIcon.addEventListener('click', () => {
-            navigator.clipboard.writeText(transcript.replace(/<[^>]+>/g, ''))
-                .then(() => {
-                    tooltip.style.visibility = 'visible';
-                    tooltip.style.opacity = '1';
-                    setTimeout(() => {
-                        tooltip.style.visibility = 'hidden';
-                        tooltip.style.opacity = '0';
-                    }, 2000);
-                })
-                .catch(err => console.error('Error copying text:', err));
-        });
-        transcriptDiv.appendChild(copyIcon);
-
-        transcriptsContainer.appendChild(transcriptDiv);
+  const toggle = document.getElementById('darkModeToggle');
+  if (toggle) {
+    toggle.checked = (theme === 'dark');
+    toggle.addEventListener('change', () => {
+      theme = toggle.checked ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.colorScheme = theme;
+      try { localStorage.setItem(KEY, theme); } catch {}
     });
+  }
+})();
+
+/* ==== KEYWORDS ==== */
+const keywordsRed = ["commercial fire","cover fire","flue fire","structure fire","urgent","smoke","accident","grass fire","burn","vehicle fire","mva","nva ","mba ","explosion","gunshot"].map(s=>s.toLowerCase());
+const keywordsYellow = ["medical aid","mutual aid","flood","power outage","road closure","water rescue"].map(s=>s.toLowerCase());
+const keywordsOrange = ["fire alarm","fire investigation"].map(s=>s.toLowerCase());
+
+/* ==== POLLING CONTROL ==== */
+const POLL_MS = 15000; // 15 seconds
+let inFlight = false;
+let aborter = null;
+let lastRenderedIds = "";
+
+document.addEventListener('visibilitychange', () => { window._pollPaused = document.hidden; });
+
+/* ==== HELPERS ==== */
+function escHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function highlightText(text){
+  const sets=[{list:keywordsRed,cls:'keyword-red'},{list:keywordsYellow,cls:'keyword-yellow'},{list:keywordsOrange,cls:'keyword-orange'}];
+  let html=escHtml(text);
+  for(const {list,cls} of sets){
+    for(const kw of list){
+      const t=kw.trim(); if(!t) continue;
+      const re=new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi');
+      html=html.replace(re,`<span class="${cls}">$1</span>`);
+    }
+  }
+  return html;
+}
+function parseDateFromFilename(fn){
+  try{
+    const p=fn.replace('.json','').split('_'); if(p.length<3)return null;
+    return new Date(Date.UTC(+p[1].slice(0,4),+p[1].slice(4,6)-1,+p[1].slice(6,8),+p[2].slice(0,2),+p[2].slice(2,4),+p[2].slice(4,6)));
+  }catch{return null;}
+}
+function getDateUrls(){
+  const now=new Date(); const y=now.getUTCFullYear(),m=now.getUTCMonth()+1,d=now.getUTCDate();
+  const yst=new Date(now.getTime()-86400000); const yy=yst.getUTCFullYear(),ym=yst.getUTCMonth()+1,yd=yst.getUTCDate();
+  return [
+    `https://archive.theroseburgreceiver.com/dfpaprimary/${y}/${m}/${d}/`,
+    `https://archive.theroseburgreceiver.com/dfpaprimary/${yy}/${ym}/${yd}/`,
+  ];
+}
+async function fetchDirectoryFiles(baseUrl,signal){
+  const r=await fetch(baseUrl,{signal}); if(!r.ok) return [];
+  const text=await r.text();
+  const doc=new DOMParser().parseFromString(text,'text/html');
+  return Array.from(doc.querySelectorAll('a'))
+    .map(a=>a.getAttribute('href')).filter(h=>h&&h.endsWith('.json'))
+    .map(filename=>({url:baseUrl+filename,filename}));
 }
 
-fetchTranscripts();
-setInterval(fetchTranscripts, 5000);
+/* ==== MAIN FETCH LOOP (overlap-safe, batched) ==== */
+async function fetchTranscriptsOnce(){
+  if(inFlight||window._pollPaused) return;
+  inFlight=true;
+  if(aborter){try{aborter.abort();}catch{}}
+  aborter=new AbortController(); const {signal}=aborter;
+  try{
+    const bases=getDateUrls();
+    const lists=await Promise.allSettled(bases.map(b=>fetchDirectoryFiles(b,signal)));
+    let files=[]; for(const res of lists) if(res.status==='fulfilled') files=files.concat(res.value);
+    files=files.filter(f=>parseDateFromFilename(f.filename))
+               .sort((a,b)=>parseDateFromFilename(b.filename)-parseDateFromFilename(a.filename))
+               .slice(0,150);
+
+    const idKey=files.map(f=>f.filename).join(',');
+    if(idKey===lastRenderedIds) return;
+
+    const limit=6, out=[]; let i=0;
+    async function worker(){
+      while(i<files.length){
+        const idx=i++; const f=files[idx];
+        try{
+          const r=await fetch(f.url,{signal}); if(!r.ok) continue;
+          const json=await r.json();
+          const raw=json?.transcript?.transcript||'No transcript available';
+          const noAudio=/Thanks\s*for\s*watching|Thank\s*you\s*for\s*watching/gi.test(raw);
+          const safe=noAudio?'-- FIRE TONE OR NO AUDIO --':raw;
+
+          const dateStr=f.filename.split('_')[1]; const timeStr=f.filename.split('_')[2].slice(0,6);
+          const utc=new Date(Date.UTC(+dateStr.slice(0,4),+dateStr.slice(4,6)-1,+dateStr.slice(6,8),+timeStr.slice(0,2),+timeStr.slice(2,4),+timeStr.slice(4,6)));
+          const local=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(utc);
+
+          const baseUrl=f.url.substring(0,f.url.lastIndexOf('/')+1);
+          const mp3Link=`${baseUrl}${f.filename.replace('.json','.mp3')}`;
+
+          const low=safe.toLowerCase();
+          const matchRed=keywordsRed.find(k=>low.includes(k));
+          const matchYel=keywordsYellow.find(k=>low.includes(k));
+          const matchOrg=keywordsOrange.find(k=>low.includes(k));
+
+          out[idx]={id:f.filename,time:local,transcriptHtml:highlightText(safe),mp3Link,color:matchRed?'red':matchYel?'yellow':matchOrg?'orange':''};
+        }catch{}
+      }
+    }
+    await Promise.all(Array.from({length:limit},worker));
+    const items=out.filter(Boolean);
+    if(items.length){ renderTranscripts(items); lastRenderedIds=idKey; }
+  }finally{ inFlight=false; }
+}
+
+/* ==== RENDER ==== */
+function renderTranscripts(items){
+  const container=document.getElementById('transcripts');
+  const audioPlayer=document.getElementById('audioPlayer');
+  const audioSource=document.getElementById('audioSource');
+  if(!container) return;
+
+  const frag=document.createDocumentFragment();
+  for(const {time,transcriptHtml,mp3Link,color} of items){
+    const div=document.createElement('div');
+    div.className='transcript';
+    if(color==='red') div.classList.add('highlight-red');
+    else if(color==='yellow') div.classList.add('highlight-yellow');
+    else if(color==='orange') div.classList.add('highlight-orange');
+
+    const timeSpan=document.createElement('span');
+    timeSpan.style.fontWeight='bold';
+    timeSpan.textContent=`${time}: `;
+    div.appendChild(timeSpan);
+
+    const textSpan=document.createElement('span');
+    textSpan.innerHTML=transcriptHtml;
+    div.appendChild(textSpan);
+
+    const listen=document.createElement('a');
+    listen.href='#';
+    listen.textContent='▶ Listen';
+    listen.className='listen-btn';
+    listen.addEventListener('click',(e)=>{
+      e.preventDefault();
+      if(!audioPlayer||!audioSource) return;
+      audioSource.src=mp3Link;
+      audioPlayer.load();
+      audioPlayer.play().catch(()=>{});
+    });
+    div.appendChild(listen);
+
+    const copyIcon=document.createElement('span');
+    copyIcon.textContent='📋';
+    copyIcon.className='copy-icon';
+    const tooltip=document.createElement('span');
+    tooltip.className='tooltip'; tooltip.textContent='Copied!';
+    copyIcon.appendChild(tooltip);
+    copyIcon.addEventListener('click',()=>{
+      const tmp=document.createElement('div'); tmp.innerHTML=transcriptHtml;
+      const plain=tmp.textContent||tmp.innerText||'';
+      navigator.clipboard.writeText(plain).then(()=>{
+        tooltip.style.visibility='visible'; tooltip.style.opacity='1';
+        setTimeout(()=>{tooltip.style.visibility='hidden'; tooltip.style.opacity='0';},1500);
+      }).catch(()=>{});
+    });
+    div.appendChild(copyIcon);
+
+    frag.appendChild(div);
+  }
+  container.replaceChildren(frag);
+}
+
+/* ==== BOOT ==== */
+fetchTranscriptsOnce();
+setInterval(()=>{ fetchTranscriptsOnce(); }, POLL_MS);
 
