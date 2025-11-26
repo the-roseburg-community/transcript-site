@@ -23,8 +23,6 @@ body {
   display: none !important;
 }
 
-/* ===== Green banner header (match lofi / mixer layout) ===== */
-
 .site-header {
   width: 100%;
   background-color: #7ea253;
@@ -81,7 +79,6 @@ body {
   opacity: 1;
 }
 
-/* Mobile header tweaks (same as lofi) */
 @media (max-width: 720px) {
   .site-header .header-inner {
     flex-direction: column;
@@ -108,7 +105,6 @@ body {
     font-size: 0.9rem;
   }
 }
-
 
 /* ===== Note under player ===== */
 
