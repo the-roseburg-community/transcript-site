@@ -10,13 +10,11 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
-  /* align-items: center;  <-- intentionally not used */
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  background: #020617; /* simple solid dark background */
+  background: #020617; /* plain dark */
   color: #e5e7eb;
   min-height: 100vh;
 }
-
 
 /* Hide any old toggle if still in HTML */
 .toggle-container {
@@ -108,7 +106,7 @@ body {
   }
 }
 
-/* ===== Note under player ===== */
+/* ===== Notes ===== */
 
 .note {
   text-align: center;
@@ -122,44 +120,39 @@ body {
 
 .transcript-container {
   padding: 18px 18px 16px 18px;
-  border-radius: 18px;
-  background: #020617; /* solid, no blur/overlay */
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
-  max-width: 98vw;
+  border-radius: 12px;
+  background: #020617;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.7);
+  max-width: 980px;
   width: 96%;
-  margin: 6px auto 24px auto;
+  margin: 10px auto 24px auto;
   color: #e5e7eb;
   border: 1px solid rgba(148, 163, 184, 0.35);
-  /* backdrop-filter removed to avoid GPU issues */
 }
 
-/* ===== List (simple, no advanced containment) ===== */
+/* ===== Transcript list ===== */
 
 #transcripts {
-  /* contain: content;  <-- removed for safety */
+  /* no containment tricks */
 }
 
 .transcript {
-  /* content-visibility: auto;            <-- removed */
-  /* contain: layout paint;               <-- removed */
-  /* contain-intrinsic-size: 200px 40px;  <-- removed */
-
   margin-bottom: 14px;
-  padding: 11px 13px 11px 14px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
   border: 1px solid rgba(55, 65, 81, 0.9);
-  background: rgba(15, 23, 42, 0.98);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.55);
+  background: #0b1220;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
   font-size: 1.02em;
   color: #e5e7eb;
   transition:
-    box-shadow 0.18s ease,
-    transform 0.18s ease,
-    border-color 0.18s ease;
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .transcript:hover {
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8);
   transform: translateY(-1px);
   border-color: rgba(126, 162, 83, 0.85);
 }
@@ -173,45 +166,44 @@ body {
 .highlight-red {
   background-color: #7f1d1d !important;
   color: #fee2e2 !important;
-  border-color: #b91c1c;
+  border-color: #b91c1c !important;
 }
 
 .highlight-yellow {
   background-color: #78350f !important;
   color: #fef9c3 !important;
-  border-color: #d97706;
+  border-color: #d97706 !important;
 }
 
 .highlight-orange {
   background-color: #9a3412 !important;
   color: #ffedd5 !important;
-  border-color: #ea580c;
+  border-color: #ea580c !important;
 }
 
 /* ===== Inline keyword chips ===== */
 
-.keyword-red {
-  background-color: rgba(248, 113, 113, 0.12);
-  color: #fecaca;
+.keyword-red,
+.keyword-yellow,
+.keyword-orange {
   font-weight: 600;
   padding: 0 3px;
   border-radius: 3px;
+}
+
+.keyword-red {
+  background-color: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
 }
 
 .keyword-yellow {
   background-color: rgba(250, 204, 21, 0.12);
   color: #fef9c3;
-  font-weight: 600;
-  padding: 0 3px;
-  border-radius: 3px;
 }
 
 .keyword-orange {
   background-color: rgba(249, 115, 22, 0.12);
   color: #fed7aa;
-  font-weight: 600;
-  padding: 0 3px;
-  border-radius: 3px;
 }
 
 /* ===== Controls (audio + copy) ===== */
@@ -219,7 +211,7 @@ body {
 audio#audioPlayer {
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.7);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7);
   margin-bottom: 12px;
   width: 60%;
   display: block;
@@ -228,15 +220,13 @@ audio#audioPlayer {
   background: #020617;
 }
 
-/* Copy icon + tooltip */
-
 .copy-icon {
   font-size: 17px;
   margin-left: 14px;
   color: #9ca3af;
   cursor: pointer;
   vertical-align: middle;
-  position: relative; /* for tooltip positioning */
+  position: relative;
 }
 
 .copy-icon:hover {
@@ -256,7 +246,7 @@ a.listen-btn {
   margin-left: 10px;
   text-decoration: none;
   border: 1px solid rgba(190, 242, 100, 0.5);
-  box-shadow: 0 10px 22px rgba(22, 101, 52, 0.75);
+  box-shadow: 0 6px 14px rgba(22, 101, 52, 0.75);
 }
 
 a.listen-btn:hover {
@@ -273,13 +263,12 @@ a:hover {
   text-decoration: underline;
 }
 
-/* ===== Tooltip: "Copied!" to the right of the icon ===== */
+/* ===== Tooltip ===== */
 
 .tooltip {
   visibility: hidden;
   position: absolute;
   z-index: 10;
-
   top: 50%;
   left: 110%;
   transform: translateY(-50%);
@@ -307,16 +296,16 @@ a:hover {
   border-color: transparent #111827 transparent transparent;
 }
 
-/* ===== Mobile tweaks for transcript card ===== */
+/* ===== Mobile ===== */
 
 @media (max-width: 700px) {
   .transcript-container {
-    padding: 10px 0 16px 0;
+    padding: 10px 10px 16px 10px;
     width: 100%;
     max-width: 100%;
     border-radius: 0;
     margin: 0 0 24px 0;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.8);
+    box-shadow: none;
   }
 
   audio#audioPlayer {
