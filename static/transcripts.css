@@ -119,15 +119,18 @@ body {
 /* ===== Transcript container ===== */
 
 .transcript-container {
-  padding: 18px 18px 16px 18px;
-  border-radius: 12px;
+  padding: 18px 16px 16px 16px;
+  border-radius: 0; /* full-width bar look */
   background: #020617;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.7);
-  max-width: 980px;
-  width: 96%;
-  margin: 10px auto 24px auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 10px 0 24px 0; /* no side margins, spans entire page */
   color: #e5e7eb;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  border-left: none;
+  border-right: none;
 }
 
 /* ===== Transcript list ===== */
