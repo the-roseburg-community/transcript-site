@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 import os
 import re
-import time
 import json
 import sqlite3
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
+from zoneinfo import ZoneInfo
 
-ARCHIVE_BASE = "https://archive.theroseburgreceiver.com/law1/"
-DB_PATH      = "/opt/transcript_data/law1_cache.sqlite"
+ARCHIVE_BASE = "https://archive.theroseburgreceiver.com/fire/"
+DB_PATH      = "/opt/transcript_data/fire_cache.sqlite"
 OUT_DIR      = "/var/www/transcript-cache"
-OUT_TXT      = os.path.join(OUT_DIR, "law1_last24h.txt")
-OUT_META     = os.path.join(OUT_DIR, "law1_last24h_meta.json")
+OUT_TXT      = os.path.join(OUT_DIR, "fire_last24h.txt")
+OUT_META     = os.path.join(OUT_DIR, "fire_last24h_meta.json")
 
-# How far back to include
 WINDOW_HOURS = 24
 
-# Parse filenames like: law1_YYYYMMDD_HHMMSS.json
-FN_RE = re.compile(r"^law1_(\d{8})_(\d{6})(?:_\d+)?\.json$")
+# Matches: fire_YYYYMMDD_HHMMSS.json OR fire_YYYYMMDD_HHMMSS_123.json
+FN_RE = re.compile(r"^fire_(\d{8})_(\d{6})(?:_\d+)?\.json$")
+
+PACIFIC = ZoneInfo("America/Los_Angeles")
 
 class LinkParser(HTMLParser):
   def __init__(self):
@@ -26,7 +27,7 @@ class LinkParser(HTMLParser):
     self.hrefs = []
   def handle_starttag(self, tag, attrs):
     if tag.lower() == "a":
-      for k,v in attrs:
+      for k, v in attrs:
         if k.lower() == "href" and v:
           self.hrefs.append(v)
 
@@ -57,7 +58,6 @@ def list_json_files(dir_url: str):
   p = LinkParser()
   p.feed(html)
   files = [h for h in p.hrefs if h.endswith(".json")]
-  # Some directory listings include parent links etc.
   return sorted(set(files))
 
 def ensure_db():
@@ -75,10 +75,8 @@ def ensure_db():
   return con
 
 def normalize_text(raw: str) -> str:
-  # your existing "no audio" pattern
   if re.search(r"Thanks\s*for\s*watching|Thank\s*you\s*for\s*watching", raw, flags=re.I):
     return "-- FIRE TONE OR NO AUDIO --"
-  # Make it single-line, plain text
   s = raw.replace("\r", " ").replace("\n", " ")
   s = re.sub(r"\s+", " ", s).strip()
   return s if s else "No transcript available"
@@ -87,13 +85,11 @@ def main():
   now = datetime.now(timezone.utc)
   cutoff = now - timedelta(hours=WINDOW_HOURS)
 
-  # We'll scan today + yesterday directories (same idea you used in JS).
-  # This covers the 24h window without crawling a ton of days.
   def ymd(dt):
     return dt.year, dt.month, dt.day
 
-  y,m,d = ymd(now)
-  y2,m2,d2 = ymd(now - timedelta(days=1))
+  y, m, d = ymd(now)
+  y2, m2, d2 = ymd(now - timedelta(days=1))
   dirs = [
     f"{ARCHIVE_BASE}{y}/{m}/{d}/",
     f"{ARCHIVE_BASE}{y2}/{m2}/{d2}/",
@@ -101,7 +97,6 @@ def main():
 
   con = ensure_db()
 
-  # Find candidate files in window
   candidates = []
   for base in dirs:
     for fn in list_json_files(base):
@@ -111,14 +106,11 @@ def main():
       if ts >= cutoff:
         candidates.append((ts, base + fn, fn))
 
-  # Newest first
   candidates.sort(key=lambda x: x[0], reverse=True)
 
-  # Insert any missing items into DB
   cur = con.cursor()
   inserted = 0
   for ts, url, fn in candidates:
-    # already in db?
     row = cur.execute("SELECT 1 FROM transcripts WHERE id = ?", (fn,)).fetchone()
     if row:
       continue
@@ -132,14 +124,11 @@ def main():
       )
       inserted += 1
     except Exception:
-      # ignore single-file errors
       continue
 
-  # Purge older than window
   cur.execute("DELETE FROM transcripts WHERE ts_utc < ?", (int(cutoff.timestamp()),))
   con.commit()
 
-  # Rebuild output file (one transmission per line, newest first)
   rows = cur.execute(
     "SELECT ts_utc, text FROM transcripts WHERE ts_utc >= ? ORDER BY ts_utc DESC",
     (int(cutoff.timestamp()),)
@@ -147,15 +136,12 @@ def main():
 
   os.makedirs(OUT_DIR, exist_ok=True)
 
-  # Format timestamp in America/Los_Angeles like your UI (24h clock)
-  # We’ll avoid timezone libs; hardcode by converting via localtime if host is set to Pacific,
-  # OR just output UTC. Prefer: set TZ for the service to America/Los_Angeles.
-  # Here: output ISO-ish local placeholder; if you want exact Pacific formatting, I’ll adapt.
   lines = []
   for ts_utc, text in rows:
-    # Use UTC stamp in output; you can change to Pacific via TZ on the service.
-    stamp = datetime.fromtimestamp(ts_utc, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    lines.append(f"{stamp} {text}")
+    dt_utc = datetime.fromtimestamp(ts_utc, tz=timezone.utc)
+    dt_pac = dt_utc.astimezone(PACIFIC)
+    stamp = dt_pac.strftime("%m/%d/%Y %H:%M:%S")
+    lines.append(f"{stamp}: {text}")
 
   tmp = OUT_TXT + ".tmp"
   with open(tmp, "w", encoding="utf-8") as f:
