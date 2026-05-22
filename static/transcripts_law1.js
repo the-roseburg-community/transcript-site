@@ -197,6 +197,7 @@ function renderTranscripts(items) {
     listen.addEventListener('click', e => {
       e.preventDefault();
       if (!audioPlayer || !audioSource) return;
+      audioPlayer.style.display = "block";
       audioSource.src = mp3Link;
       audioPlayer.load();
       audioPlayer.play().catch(() => {});
