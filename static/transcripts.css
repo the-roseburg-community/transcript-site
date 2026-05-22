@@ -435,3 +435,34 @@ footer.site-footer a:hover {
     display: none;
   }
 }
+
+@media (max-width: 520px) {
+  .transcript {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 0;
+  }
+
+  .tx-time {
+    flex: 0 0 100%;
+    margin-right: 0;
+    margin-bottom: 2px;
+  }
+
+  .transcript > span:not(.tx-time):not(.copy-icon) {
+    flex: 1 1 100%;
+  }
+
+  a.listen-btn {
+    margin-left: 0;
+    margin-top: 8px;
+    display: inline-block;
+  }
+
+  .copy-icon {
+    margin-left: 8px;
+    font-size: 18px;
+    padding: 4px;
+  }
+}
