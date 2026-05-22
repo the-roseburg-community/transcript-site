@@ -1,59 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Douglas County – Multi-Feed Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="/media/trrico.ico">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="All Douglas County radio feeds in one view – Law 1, Law 2, Fire Dispatch, and DFPA. Live voice-to-text transcriptions.">
+  <meta name="author" content="Joseph Ziegler - The Roseburg Receiver">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#7ea253">
+  <meta property="og:title" content="Douglas County Multi-Feed Dashboard – The Roseburg Receiver">
+  <meta property="og:description" content="All Douglas County radio feeds in one view – Law 1, Law 2, Fire Dispatch, and DFPA live transcripts.">
+  <meta property="og:image" content="https://www.theroseburgreceiver.com/wp-content/uploads/2023/07/BannerLights.png">
+  <meta property="og:url" content="https://transcript.theroseburgreceiver.com/combined">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://transcript.theroseburgreceiver.com/combined">
+  <title>Multi-Feed Dashboard – The Roseburg Receiver</title>
   <style>
-    :root { --gap: 8px; background:#0b0b0b; color:#eaeaea; }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; }
-    header { flex: 0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:#111; border-bottom:1px solid #222; }
-    header h1 { font-size:16px; margin:0; font-weight:600; }
+    :root { --gap: 8px; --green: #7ea253; }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body {
+      display: flex;
+      flex-direction: column;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: #0b0b0b;
+      color: #eaeaea;
+    }
+    header {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 14px;
+      background: linear-gradient(135deg, #6d9147, #7ea253 55%, #8db05e);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    header h1 {
+      font-size: 15px;
+      margin: 0;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      letter-spacing: 0.02em;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 11.5px;
+    }
+    .header-right .note { opacity: .7; }
+    .header-right a {
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+    .header-right a:hover { color: #fff; text-decoration: underline; }
     .grid {
       flex: 1 1 auto;
-      display:grid; gap: var(--gap);
+      display: grid;
+      gap: var(--gap);
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
       padding: var(--gap);
-      height: 100%;
+      min-height: 0;
     }
-    .tile { background:#111; border:1px solid #222; border-radius:8px; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
-    .tile .bar { flex:0 0 auto; padding:4px 8px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center; font-size:12px; background:#121212; }
-    .tile iframe { flex:1 1 auto; border:0; width:100%; height:100%; background:#000; }
-    .note { opacity:.7; font-size:11px; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); } }
+    .tile {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .tile .bar {
+      flex: 0 0 auto;
+      padding: 5px 10px;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      background: #141414;
+    }
+    .tile .bar strong { color: #e5e7eb; font-weight: 600; }
+    .tile .bar .note { opacity: .6; font-size: 11px; }
+    .tile iframe {
+      flex: 1 1 auto;
+      border: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; grid-template-rows: repeat(4, 50vh); }
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>Douglas County Live Transcripts – Dashboard</h1>
-    <div class="note">All feeds visible; scroll inside a panel.</div>
+    <h1>The Roseburg Receiver &ndash; Live Dashboard</h1>
+    <div class="header-right">
+      <span class="note">All feeds &middot; scroll inside a panel</span>
+      <a href="/">&#8592; Feed List</a>
+    </div>
   </header>
 
   <main class="grid">
     <section class="tile">
-      <div class="bar"><strong>Law 1 – Primary</strong><span class="note">Newest calls at top</span></div>
-      <iframe src="/law1?embed=min" title="Law 1"></iframe>
+      <div class="bar"><strong>Law 1 &ndash; Primary</strong><span class="note">Newest calls at top</span></div>
+      <iframe src="/law1?embed=min" title="Law 1 Primary" loading="lazy"></iframe>
     </section>
 
     <section class="tile">
-      <div class="bar"><strong>Law 2</strong><span class="note">Backup/Secondary</span></div>
-      <iframe src="/law2?embed=min" title="Law 2"></iframe>
+      <div class="bar"><strong>Law 2</strong><span class="note">Backup / Secondary</span></div>
+      <iframe src="/law2?embed=min" title="Law 2" loading="lazy"></iframe>
     </section>
 
     <section class="tile">
-      <div class="bar"><strong>Fire / EMS</strong><span class="note">Primary</span></div>
-      <iframe src="/fire_dispatch?embed=min" title="Fire/EMS"></iframe>
+      <div class="bar"><strong>Fire / EMS Dispatch</strong><span class="note">Primary</span></div>
+      <iframe src="/fire_dispatch?embed=min" title="Fire / EMS" loading="lazy"></iframe>
     </section>
 
     <section class="tile">
-      <div class="bar"><strong>DFPA Primary</strong><span class="note">Aux</span></div>
-      <iframe src="/dfpa_primary?embed=min" title="DFPA"></iframe>
+      <div class="bar"><strong>DFPA Primary</strong><span class="note">Auxiliary</span></div>
+      <iframe src="/dfpa_primary?embed=min" title="DFPA" loading="lazy"></iframe>
     </section>
   </main>
-
-  <!-- Force dark mode inside each same-origin iframe --
 </body>
 </html>
-
