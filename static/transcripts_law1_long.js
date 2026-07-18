@@ -113,7 +113,8 @@ async function fetchTranscriptsOnce(){
           const r=await fetch(f.url,{signal});
           if(!r.ok) continue;
           const json=await r.json();
-          const raw=json?.transcript?.transcript || 'No transcript available';
+          const rawVal=json?.transcript?.transcript;
+          const raw=(typeof rawVal==='string' && rawVal.trim()) ? rawVal : 'No transcript available';
           const noAudio=/Thanks\s*for\s*watching|Thank\s*you\s*for\s*watching/gi.test(raw);
           const safe=noAudio ? '-- FIRE TONE OR NO AUDIO --' : raw;
 
