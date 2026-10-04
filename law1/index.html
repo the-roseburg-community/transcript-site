@@ -14,18 +14,6 @@
 
   <title>Transcripts For Douglas County Law 1 Primary Dispatch</title>
 
-  <!-- Optional compact embed mode via ?embed=min -->
-  <script>
-    (function () {
-      try {
-        const params = new URLSearchParams(location.search);
-        if (params.get('embed') === 'min') {
-          document.documentElement.setAttribute('data-embed', 'min');
-        }
-      } catch (e) {}
-    }());
-  </script>
-
   <link rel="stylesheet" href="/static/transcripts.css">
 </head>
 <body>
@@ -69,6 +57,6 @@
   </div>
 
   <!-- Law 1 transcript JS -->
-  <script src="/static/transcripts_law1.js?v=2"></script>
+  <script src="/static/transcripts.js?v=3" data-feed="law1" data-limit="50"></script>
 </body>
 </html>

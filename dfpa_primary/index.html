@@ -14,18 +14,6 @@
 
   <title>Transcripts For the Douglas Forest Protective Association</title>
 
-  <!-- Optional compact embed mode via ?embed=min -->
-  <script>
-    (function () {
-      try {
-        const params = new URLSearchParams(location.search);
-        if (params.get('embed') === 'min') {
-          document.documentElement.setAttribute('data-embed', 'min');
-        }
-      } catch (e) {}
-    }());
-  </script>
-
   <link rel="stylesheet" href="/static/transcripts.css">
 </head>
 <body>
@@ -69,6 +57,6 @@
   </div>
 
   <!-- DFPA transcript JS -->
-  <script src="/static/transcripts_dfpa.js?v=2"></script>
+  <script src="/static/transcripts.js?v=3" data-feed="dfpaprimary" data-limit="50"></script>
 </body>
 </html>

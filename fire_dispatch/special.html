@@ -14,18 +14,6 @@
 
   <title>Transcripts For Douglas County Fire Dispatch</title>
 
-  <!-- Optional compact embed mode via ?embed=min -->
-  <script>
-    (function () {
-      try {
-        const params = new URLSearchParams(location.search);
-        if (params.get('embed') === 'min') {
-          document.documentElement.setAttribute('data-embed', 'min');
-        }
-      } catch (e) {}
-    }());
-  </script>
-
   <link rel="stylesheet" href="/static/transcripts.css">
 </head>
 <body>
@@ -70,6 +58,6 @@
 
 
   <!-- Fire dispatch JS -->
-  <script src="/static/transcripts_fire1_long.js?v=2"></script>
+  <script src="/static/transcripts.js?v=3" data-feed="fire" data-limit="150"></script>
 </body>
 </html>

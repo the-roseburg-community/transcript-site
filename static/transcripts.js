@@ -3,6 +3,11 @@ const keywordsRed = ["commercial fire","cover fire","flue fire","structure fire"
 const keywordsYellow = ["medical aid","mutual aid","flood","power outage","road closure","water rescue"].map(s=>s.toLowerCase());
 const keywordsOrange = ["fire alarm","fire investigation"].map(s=>s.toLowerCase());
 
+/* ==== FEED CONFIG (set per page on the script tag: data-feed, data-limit) ==== */
+const FEED_CONFIG = document.currentScript.dataset;
+const FEED = FEED_CONFIG.feed;                 // archive folder name, e.g. "fire" or "dfpaprimary"
+const LIMIT = Number(FEED_CONFIG.limit) || 50; // how many transmissions to show
+
 /* ==== POLLING CONTROL ==== */
 const POLL_MS = 15000; // 15 seconds
 let inFlight = false;
@@ -82,8 +87,8 @@ function getDateUrls(){
   const yst=new Date(now.getTime()-86400000);
   const yy=yst.getUTCFullYear(),ym=yst.getUTCMonth()+1,yd=yst.getUTCDate();
   return [
-    `https://archive.theroseburgreceiver.com/fire/${y}/${m}/${d}/`,
-    `https://archive.theroseburgreceiver.com/fire/${yy}/${ym}/${yd}/`,
+    `https://archive.theroseburgreceiver.com/${FEED}/${y}/${m}/${d}/`,
+    `https://archive.theroseburgreceiver.com/${FEED}/${yy}/${ym}/${yd}/`,
   ];
 }
 
@@ -113,10 +118,10 @@ async function fetchTranscriptsOnce(){
       .sort((a,b)=>parseDateFromFilename(b.filename)-parseDateFromFilename(a.filename));
     let files=newestFirst(await fetchDirectoryFiles(todayUrl,signal).catch(()=>[]));
     // Yesterday's listing is large; only fetch it when today can't fill the feed on its own
-    if(files.length<150){
+    if(files.length<LIMIT){
       files=files.concat(newestFirst(await fetchDirectoryFiles(yesterdayUrl,signal).catch(()=>[])));
     }
-    files=files.slice(0,150);
+    files=files.slice(0,LIMIT);
 
     const idKey=files.map(f=>f.filename).join(',');
     if(idKey===lastRenderedIds) return;
@@ -133,7 +138,8 @@ async function fetchTranscriptsOnce(){
           const r=await fetch(f.url,{signal});
           if(!r.ok) continue;
           const json=await r.json();
-          const raw=json?.transcript?.transcript || 'No transcript available';
+          const rawVal=json?.transcript?.transcript;
+          const raw=(typeof rawVal==='string' && rawVal.trim()) ? rawVal : 'No transcript available';
           const noAudio=/Thanks\s*for\s*watching|Thank\s*you\s*for\s*watching/gi.test(raw);
           const safe=noAudio ? '-- FIRE TONE OR NO AUDIO --' : raw;
 
