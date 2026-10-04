@@ -8,11 +8,22 @@ const FEED_CONFIG = document.currentScript.dataset;
 const FEED = FEED_CONFIG.feed;                 // archive folder name, e.g. "fire" or "dfpaprimary"
 const LIMIT = Number(FEED_CONFIG.limit) || 50; // how many transmissions to show
 
+// Channel tabs shown in the header; dir is the page folder on this site
+const FEEDS = [
+  {dir:'law1',          label:'Law 1'},
+  {dir:'law2',          label:'Law 2'},
+  {dir:'fire_dispatch', label:'Fire Dispatch'},
+  {dir:'fire2',         label:'Fire 2'},
+  {dir:'dfpa_primary',  label:'DFPA'},
+];
+
 /* ==== POLLING CONTROL ==== */
 const POLL_MS = 15000; // 15 seconds
 let inFlight = false;
 let aborter = null;
 let lastRenderedIds = "";
+let renderedIds = null;      // ids currently on screen; null until the first render so the initial load isn't flagged as new
+let lastPollOk = false;      // did the last poll reach the archive at all
 const itemCache = new Map(); // filename -> rendered item, so unchanged files aren't re-fetched/re-parsed every poll
 
 let pollTimer = null;
@@ -94,6 +105,7 @@ function getDateUrls(){
 
 async function fetchDirectoryFiles(baseUrl,signal){
   const r=await fetch(baseUrl,{signal});
+  lastPollOk=true; // a 404 still means the archive answered (e.g. no folder yet for a quiet channel's day)
   if(!r.ok) return [];
   const text=await r.text();
   const doc=new DOMParser().parseFromString(text,'text/html');
@@ -111,6 +123,7 @@ async function fetchTranscriptsOnce(){
   aborter=new AbortController();
   const {signal}=aborter;
 
+  lastPollOk=false;
   try{
     const [todayUrl,yesterdayUrl]=getDateUrls();
     const newestFirst=list=>list
@@ -169,7 +182,8 @@ async function fetchTranscriptsOnce(){
             time:local,
             transcriptHtml:highlightText(safe),
             mp3Link,
-            color:matchRed?'red':matchYel?'yellow':matchOrg?'orange':''
+            color:matchRed?'red':matchYel?'yellow':matchOrg?'orange':'',
+            noise:noAudio
           });
         }catch{
           // ignore per-file errors
@@ -202,9 +216,11 @@ function renderTranscripts(items){
   if(!container) return;
 
   const frag=document.createDocumentFragment();
-  for(const {time,transcriptHtml,mp3Link,color} of items){
+  for(const {id,time,transcriptHtml,mp3Link,color,noise} of items){
     const div=document.createElement('div');
     div.className='transcript';
+    if(noise) div.classList.add('transcript-noise');
+    if(renderedIds && !renderedIds.has(id)) div.classList.add('transcript-new');
     if(color==='red') div.classList.add('highlight-red');
     else if(color==='yellow') div.classList.add('highlight-yellow');
     else if(color==='orange') div.classList.add('highlight-orange');
@@ -258,14 +274,61 @@ function renderTranscripts(items){
     frag.appendChild(div);
   }
   container.replaceChildren(frag);
+  renderedIds=new Set(items.map(it=>it.id));
+}
+
+/* ==== CHANNEL TABS + LIVE STATUS ==== */
+function buildFeedNav(){
+  const header=document.querySelector('.site-header');
+  if(!header) return;
+  const currentDir=location.pathname.split('/').filter(Boolean)[0];
+  const onSpecial=location.pathname.endsWith('/special.html');
+
+  const nav=document.createElement('nav');
+  nav.className='feed-nav';
+  nav.setAttribute('aria-label','Channels');
+
+  const tabs=document.createElement('div');
+  tabs.className='feed-tabs';
+  for(const {dir,label} of FEEDS){
+    const a=document.createElement('a');
+    a.className='feed-tab';
+    a.textContent=label;
+    // Stay on the same view (regular vs. extended) when switching channels
+    a.href=`/${dir}/${onSpecial?'special.html':''}`;
+    if(dir===currentDir){
+      a.classList.add('active');
+      a.setAttribute('aria-current','page');
+    }
+    tabs.appendChild(a);
+  }
+  nav.appendChild(tabs);
+
+  const status=document.createElement('div');
+  status.className='live-status';
+  status.id='liveStatus';
+  status.textContent='Connecting…';
+  nav.appendChild(status);
+
+  header.after(nav);
+}
+
+function updateLiveStatus(){
+  const el=document.getElementById('liveStatus');
+  if(!el) return;
+  const now=timeFmt.format(new Date()).split(', ')[1];
+  el.classList.toggle('offline',!lastPollOk);
+  el.textContent=lastPollOk ? `Live · updated ${now}` : `Can't reach archive · retrying (${now})`;
 }
 
 /* ==== BOOT ==== */
 async function runPoll(){
   await fetchTranscriptsOnce();
+  updateLiveStatus();
   // Clear first so a visibility change mid-fetch can't leave two timer chains running
   clearTimeout(pollTimer);
   pollTimer = document.hidden ? null : setTimeout(runPoll, POLL_MS);
 }
 
+buildFeedNav();
 runPoll();
