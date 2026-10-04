@@ -8,8 +8,28 @@ const POLL_MS = 15000; // 15 seconds
 let inFlight = false;
 let aborter = null;
 let lastRenderedIds = "";
+const itemCache = new Map(); // filename -> rendered item, so unchanged files aren't re-fetched/re-parsed every poll
 
-document.addEventListener('visibilitychange', () => { window._pollPaused = document.hidden; });
+let pollTimer = null;
+
+// One shared formatter instead of building a new one for every transcript
+const timeFmt = new Intl.DateTimeFormat('en-US',{
+  timeZone:'America/Los_Angeles',
+  year:'numeric',
+  month:'2-digit',
+  day:'2-digit',
+  hour:'2-digit',
+  minute:'2-digit',
+  second:'2-digit',
+  hour12:false
+});
+
+// Stop polling entirely while the tab is hidden; resume immediately when it's visible again
+document.addEventListener('visibilitychange', () => {
+  clearTimeout(pollTimer);
+  pollTimer = null;
+  if(!document.hidden) runPoll();
+});
 
 /* ==== HELPERS ==== */
 function escHtml(s){
@@ -80,35 +100,35 @@ async function fetchDirectoryFiles(baseUrl,signal){
 
 /* ==== MAIN FETCH LOOP (overlap-safe, batched) ==== */
 async function fetchTranscriptsOnce(){
-  if(inFlight||window._pollPaused) return;
+  if(inFlight) return;
   inFlight=true;
   if(aborter){try{aborter.abort();}catch{}}
   aborter=new AbortController();
   const {signal}=aborter;
 
   try{
-    const bases=getDateUrls();
-    const lists=await Promise.allSettled(bases.map(b=>fetchDirectoryFiles(b,signal)));
-    let files=[];
-    for(const res of lists){
-      if(res.status==='fulfilled') files=files.concat(res.value);
-    }
-    files=files
+    const [todayUrl,yesterdayUrl]=getDateUrls();
+    const newestFirst=list=>list
       .filter(f=>parseDateFromFilename(f.filename))
-      .sort((a,b)=>parseDateFromFilename(b.filename)-parseDateFromFilename(a.filename))
-      .slice(0,50);
+      .sort((a,b)=>parseDateFromFilename(b.filename)-parseDateFromFilename(a.filename));
+    let files=newestFirst(await fetchDirectoryFiles(todayUrl,signal).catch(()=>[]));
+    // Yesterday's listing is large; only fetch it when today can't fill the feed on its own
+    if(files.length<50){
+      files=files.concat(newestFirst(await fetchDirectoryFiles(yesterdayUrl,signal).catch(()=>[])));
+    }
+    files=files.slice(0,50);
 
     const idKey=files.map(f=>f.filename).join(',');
     if(idKey===lastRenderedIds) return;
 
+    const toFetch=files.filter(f=>!itemCache.has(f.filename));
     const limit=6;
-    const out=[];
     let i=0;
 
     async function worker(){
-      while(i<files.length){
+      while(i<toFetch.length){
         const idx=i++;
-        const f=files[idx];
+        const f=toFetch[idx];
         try{
           const r=await fetch(f.url,{signal});
           if(!r.ok) continue;
@@ -128,16 +148,7 @@ async function fetchTranscriptsOnce(){
             +timeStr.slice(4,6)
           ));
 
-          const local=new Intl.DateTimeFormat('en-US',{
-            timeZone:'America/Los_Angeles',
-            year:'numeric',
-            month:'2-digit',
-            day:'2-digit',
-            hour:'2-digit',
-            minute:'2-digit',
-            second:'2-digit',
-            hour12:false
-          }).format(utc);
+          const local=timeFmt.format(utc);
 
           const baseUrl=f.url.substring(0,f.url.lastIndexOf('/')+1);
           const mp3Link=`${baseUrl}${f.filename.replace('.json','.mp3')}`;
@@ -147,13 +158,13 @@ async function fetchTranscriptsOnce(){
           const matchYel=keywordsYellow.find(k=>low.includes(k));
           const matchOrg=keywordsOrange.find(k=>low.includes(k));
 
-          out[idx]={
+          itemCache.set(f.filename,{
             id:f.filename,
             time:local,
             transcriptHtml:highlightText(safe),
             mp3Link,
             color:matchRed?'red':matchYel?'yellow':matchOrg?'orange':''
-          };
+          });
         }catch{
           // ignore per-file errors
         }
@@ -161,7 +172,13 @@ async function fetchTranscriptsOnce(){
     }
 
     await Promise.all(Array.from({length:limit},worker));
-    const items=out.filter(Boolean);
+
+    const currentKeys=new Set(files.map(f=>f.filename));
+    for(const key of itemCache.keys()){
+      if(!currentKeys.has(key)) itemCache.delete(key);
+    }
+
+    const items=files.map(f=>itemCache.get(f.filename)).filter(Boolean);
     if(items.length){
       renderTranscripts(items);
       lastRenderedIds=idKey;
@@ -238,5 +255,11 @@ function renderTranscripts(items){
 }
 
 /* ==== BOOT ==== */
-fetchTranscriptsOnce();
-setInterval(()=>{ fetchTranscriptsOnce(); }, POLL_MS);
+async function runPoll(){
+  await fetchTranscriptsOnce();
+  // Clear first so a visibility change mid-fetch can't leave two timer chains running
+  clearTimeout(pollTimer);
+  pollTimer = document.hidden ? null : setTimeout(runPoll, POLL_MS);
+}
+
+runPoll();
